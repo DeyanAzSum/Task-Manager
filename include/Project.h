@@ -2,10 +2,10 @@
 #include "WorkItem.h"
 #include "Task.h"
 #include "User.h"
+#include "Notification.h"
 #include <vector>
 #include <memory>
-#include <iostream>
-#include <algorithm>
+#include <string>
 
 class Project : public WorkItem {
 private:
@@ -14,57 +14,24 @@ private:
     int nextTaskId;
 
 public:
-    explicit Project(int id, const std::string& title, const std::string& description)
-        : WorkItem(id, title, description), nextTaskId(1) {}
+    explicit Project(int id, const std::string& title, const std::string& description);
 
-    Task* addTask(const std::string& title, const std::string& description,
-                  Priority priority, const std::string& dueDate) {
-        tasks.push_back(std::make_unique<Task>(nextTaskId++, title, description, priority, dueDate));
-        return tasks.back().get();
-    }
+    Task* addTask(const std::string& title, const std::string& description, Priority priority, const std::string& dueDate);
+    Task* findTask(int id) const;
+    bool removeTask(int id);
+    const std::vector<std::unique_ptr<Task>>& getTasks() const;
 
-    Task* findTask(int id) const {
-        for (const auto& t : tasks)
-            if (t->getId() == id) return t.get();
-        return nullptr;
-    }
+    void addMember(User* user);
+    bool removeMember(int userId);
+    User* findMember(int userId) const;
+    const std::vector<User*>& getMembers() const;
 
-    bool removeTask(int id) {
-        auto it = std::remove_if(tasks.begin(), tasks.end(),
-            [id](const std::unique_ptr<Task>& t){ return t->getId() == id; });
-        if (it == tasks.end()) return false;
-        tasks.erase(it, tasks.end());
-        return true;
-    }
+    std::vector<Task*> searchTasks(const std::string& keyword) const;
+    std::vector<Task*> filterByStatus(Status s) const;
+    std::vector<Task*> filterByPriority(Priority p) const;
+    std::vector<Task*> filterByAssignee(int userId) const;
 
-    const std::vector<std::unique_ptr<Task>>& getTasks() const { return tasks; }
+    std::vector<Notification> checkDeadlines(const std::string& today, int nextId) const;
 
-    void addMember(User* user) {
-        for (auto* m : members)
-            if (m->getId() == user->getId()) return;
-        members.push_back(user);
-    }
-
-    bool removeMember(int userId) {
-        auto it = std::remove_if(members.begin(), members.end(),
-            [userId](User* u){ return u->getId() == userId; });
-        if (it == members.end()) return false;
-        members.erase(it, members.end());
-        return true;
-    }
-
-    User* findMember(int userId) const {
-        for (auto* m : members)
-            if (m->getId() == userId) return m;
-        return nullptr;
-    }
-
-    const std::vector<User*>& getMembers() const { return members; }
-
-    void printDetails() const override {
-        std::cout << "[Project #" << id << "] " << title << "\n"
-                  << "  Desc   : " << description << "\n"
-                  << "  Tasks  : " << tasks.size() << "\n"
-                  << "  Members: " << members.size() << "\n";
-    }
+    void printDetails() const override;
 };
